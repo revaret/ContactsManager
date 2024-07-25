@@ -20,6 +20,7 @@ import {ContactFormType, FormType, PayloadType} from '../utils/types';
 import useContacts from '../hooks/useContacts';
 import useCamera from '../hooks/useCamera';
 import usePicker from '../hooks/usePicker';
+import CustomTextInput from './CustomTextInput';
 
 const ContactForm = (props: ContactFormType) => {
   const [avatar, setAvatar] = useState('');
@@ -35,7 +36,7 @@ const ContactForm = (props: ContactFormType) => {
     watch,
     setValue,
     trigger,
-    formState: {isValid},
+    formState: {isValid, errors},
   } = useForm({
     resolver: yupResolver(ContactSchema),
     mode: 'onChange',
@@ -86,11 +87,16 @@ const ContactForm = (props: ContactFormType) => {
           quality: 0.5,
         });
 
-        console.log('results', result);
+        if (result?.assets?.length === 0) {
+          return;
+        }
+        if (result?.assets) {
+          setAvatar(result.assets[0].uri);
+        }
         result.canceled
           ? () => {}
-          : (result: any) => {
-              console.log('result', result);
+          : () => {
+              setAvatar(result.assets[0].uri);
             };
       } else {
         const result = await photos.selectImage({
@@ -101,18 +107,15 @@ const ContactForm = (props: ContactFormType) => {
         }
         if (result?.assets) {
           setAvatar(result.assets[0].uri);
-          console.log('result', result.assets[0].uri);
         }
         result.canceled
           ? () => {}
           : () => {
               setAvatar(result.assets[0].uri);
-              console.log('result', result.assets[0].uri);
             };
       }
     } catch (error) {
       Alert.alert('Image error', 'Error reading image');
-      console.log(error);
     }
   };
 
@@ -130,15 +133,15 @@ const ContactForm = (props: ContactFormType) => {
   return (
     <View style={styles.container}>
       <Spacer size="XL" />
-      <View style={{alignItems: 'center'}}>
+      <View style={styles.avatarContainer}>
         <Avatar
           imageUrl={avatar}
           initials={getInitials(
             watch(ContactFields.firstName) || '',
             watch(ContactFields.lastName) || '',
           )}
-          extraContainerStyle={{height: 100, width: 100, borderRadius: 50}}
-          extraTextStyle={{fontSize: 40}}
+          extraContainerStyle={styles.avatarExtraStyle}
+          extraTextStyle={styles.avatarText}
         />
         <Spacer size="L" />
         <Pressable onPress={handlePress}>
@@ -153,12 +156,13 @@ const ContactForm = (props: ContactFormType) => {
         control={control}
         name={ContactFields.firstName}
         render={({field: {onChange, value, onBlur}}) => (
-          <TextInput
+          <CustomTextInput
+            testID={ContactFields.firstName}
             placeholder="Firstname"
             value={value}
             onChangeText={onChange}
             onBlur={onBlur}
-            style={styles.textInput}
+            error={errors.firstName?.message}
           />
         )}
       />
@@ -167,12 +171,13 @@ const ContactForm = (props: ContactFormType) => {
         control={control}
         name={ContactFields.lastName}
         render={({field: {onChange, value, onBlur}}) => (
-          <TextInput
+          <CustomTextInput
+            testID={ContactFields.lastName}
             placeholder="Lastname"
             value={value}
             onChangeText={onChange}
             onBlur={onBlur}
-            style={styles.textInput}
+            error={errors.lastName?.message}
           />
         )}
       />
@@ -181,13 +186,15 @@ const ContactForm = (props: ContactFormType) => {
         control={control}
         name={ContactFields.phoneNumber}
         render={({field: {onChange, value, onBlur}}) => (
-          <TextInput
+          <CustomTextInput
+            testID={ContactFields.phoneNumber}
             placeholder="Mobile Number"
             value={value}
             onChangeText={onChange}
             onBlur={onBlur}
             keyboardType="phone-pad"
-            style={styles.textInput}
+            maxLength={10}
+            error={errors.phoneNumber?.message}
           />
         )}
       />
@@ -196,30 +203,34 @@ const ContactForm = (props: ContactFormType) => {
         control={control}
         name={ContactFields.email}
         render={({field: {onChange, value, onBlur}}) => (
-          <TextInput
+          <CustomTextInput
+            testID={ContactFields.email}
             placeholder="Email"
             value={value}
             onChangeText={onChange}
             onBlur={onBlur}
             keyboardType="email-address"
-            style={styles.textInput}
+            error={errors.email?.message}
           />
         )}
       />
       <Spacer size="L" />
       <View style={styles.buttonContainer}>
         <Pressable
+          testID="submit"
           onPress={handleSubmit(onSubmit)}
           disabled={!isValid}
           style={[styles.button, !isValid && styles.buttonDisabled]}>
-          <Text style={styles.buttonText}>{isEdit ? 'Update' : 'Add'}</Text>
+          <Text style={styles.buttonText}>
+            {isEdit ? 'Update Contact' : 'Add Contact'}
+          </Text>
         </Pressable>
         {isEdit && (
           <Pressable
             onPress={TriggerDeletePermission}
             disabled={!isValid}
-            style={[styles.button, !isValid && styles.buttonDisabled]}>
-            <Text style={styles.buttonText}>Delete</Text>
+            style={[styles.button, styles.deleteButton]}>
+            <Text style={styles.buttonText}>Delete Contact</Text>
           </Pressable>
         )}
       </View>
@@ -239,9 +250,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'center',
   },
+  deleteButton: {
+    backgroundColor: 'red',
+  },
   buttonDisabled: {backgroundColor: 'lightblue'},
   buttonText: {color: 'white', fontWeight: 'bold'},
   buttonContainer: {flexDirection: 'row', justifyContent: 'space-around'},
+  avatarContainer: {alignItems: 'center'},
+  avatarExtraStyle: {height: 100, width: 100, borderRadius: 50},
+  avatarText: {fontSize: 40},
 });
 
 export default ContactForm;

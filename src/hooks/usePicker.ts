@@ -1,10 +1,15 @@
 import {useEffect} from 'react';
-import * as ImagePicker from 'expo-image-picker';
+import {
+  ImagePickerOptions,
+  launchImageLibraryAsync,
+  MediaTypeOptions,
+  requestMediaLibraryPermissionsAsync,
+} from 'expo-image-picker';
 import {Alert} from 'react-native';
 
 const usePicker = () => {
   const requestPermission = async () => {
-    const {granted} = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const {granted} = await requestMediaLibraryPermissionsAsync();
 
     if (!granted) {
       Alert.alert(
@@ -14,12 +19,10 @@ const usePicker = () => {
     }
   };
 
-  const selectImage = async (
-    options: ImagePicker.ImagePickerOptions | undefined,
-  ) => {
-    options = {mediaTypes: ImagePicker.MediaTypeOptions.Images, ...options};
+  const selectImage = async (options: ImagePickerOptions | undefined) => {
+    options = {mediaTypes: MediaTypeOptions.Images, ...options};
 
-    return await ImagePicker.launchImageLibraryAsync(options);
+    return await launchImageLibraryAsync(options);
   };
 
   useEffect(() => {

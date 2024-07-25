@@ -1,6 +1,10 @@
 import {useEffect} from 'react';
 import {Camera} from 'expo-camera';
-import * as ImagePicker from 'expo-image-picker';
+import {
+  ImagePickerOptions,
+  launchCameraAsync,
+  MediaTypeOptions,
+} from 'expo-image-picker';
 import {Alert} from 'react-native';
 
 const useCamera = () => {
@@ -15,12 +19,10 @@ const useCamera = () => {
     }
   };
 
-  const takePhoto = async (
-    options: ImagePicker.ImagePickerOptions | undefined,
-  ) => {
-    options = {mediaTypes: ImagePicker.MediaTypeOptions.Images, ...options};
+  const takePhoto = async (options: ImagePickerOptions | undefined) => {
+    options = {mediaTypes: MediaTypeOptions.Images, ...options};
 
-    return await ImagePicker.launchCameraAsync(options);
+    return await launchCameraAsync(options);
   };
 
   useEffect(() => {
